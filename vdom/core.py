@@ -105,7 +105,8 @@ def _flatten_children(*children, **kwargs):
         children = []
     return children
 
-def createComponent(tagName):
+
+def createComponent(tagName, url=None, docs=None, notes=None, examples=None):
     """Create a component for an HTML Tag
 
     Examples:
@@ -115,26 +116,37 @@ def createComponent(tagName):
 
     """
 
+    if examples is None:
+        examples = []
+
+    if docs is None:
+        docs = """A virtual DOM component for a {tagName} tag
+
+        >>> {tagName}()
+        <{tagName} />
+        """.format(tagName=tagName)
+
     class Component():
         """A basic class for a virtual DOM Component"""
+
         def __init__(self, *children, **kwargs):
             self.children = _flatten_children(*children, **kwargs)
             self.attributes = kwargs
-            self.tagName = tagName
 
         def _repr_mimebundle_(self, include, exclude, **kwargs):
-            return {
-                'application/vdom.v1+json': toJSON(self),
-                'text/plain': '<{tagName} />'.format(tagName=tagName)
-            }
-            
-    Component.__doc__ = """A virtual DOM component for a {tagName} tag
-    
-    >>> {tagName}()
-    <{tagName} />
-    """.format(tagName=tagName)
-    
+            if isinstance(self, type):
+                return {'text/plain': docs}  # FIXME: How to get this to work? Metaclass didn't help... :(
+            else:
+                return {'application/vdom.v1+json': toJSON(self), 'text/plain': '<{tagName} />'.format(tagName=tagName)}
+
+    Component.__doc__ = docs
+    Component.url = url
+    Component.notes = notes
+    Component.examples = examples
+    Component.tagName = tagName
+
     return Component
+
 
 def createElement(tagName):
     """Takes an HTML tag and creates a VDOM Component
