@@ -97,7 +97,3 @@ ENV/
 
 # mypy
 .mypy_cache/
-
-# requests_cache
-.*.cache.sqlite
-.*.cache.sqlite-journal
