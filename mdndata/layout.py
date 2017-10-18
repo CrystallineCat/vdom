@@ -33,8 +33,10 @@ class Layout(dict):
                 }
             )
 
-            # Bubble up all requests; using dict.items since obj might overwrite items
-            for key, values in dict.items(obj):
+            # Bubble up all requests
+            for key in obj:
+                values = obj[key]
+
                 for value in values.copy():
                     if isinstance(value, scrapy.Request):
                         yield value
@@ -43,7 +45,10 @@ class Layout(dict):
                 if not getattr(cls, key).plural:
                     obj[key] = values[0] if values else None
 
-            yield obj
+            if hasattr(obj, 'parse_results'):
+                yield from obj.parse_results
+            else:
+                yield obj
 
 
 class XPath:

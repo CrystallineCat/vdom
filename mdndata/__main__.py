@@ -1,42 +1,16 @@
-import scrapy
-import scrapy.crawler
+from .layout_mdn import HTMLIndexPage, SVGIndexPage
+from .spider import MDNDataSpider
 
-from .spider import HTMLIndex
-
-
-def save_code(kind, x):
-    with open('vdom/%s.py' % kind, 'w', encoding='utf-8') as file:
-        print(x, file=file)
-        print(x)
+import sys
 
 
-class MDNDataSpider(scrapy.Spider):
-    name = 'mdndata'
-    custom_settings = {
-        'HTTPCACHE_ENABLED': True,
-        'HTTPCACHE_POLICY': 'scrapy.extensions.httpcache.DummyPolicy',
-    }
+if 'cached' in sys.argv:
+    MDNDataSpider.use_cache(True)
 
-    def start_requests(self):
-        yield scrapy.Request(HTMLIndex.url, callback=HTMLIndex.parse)
+scraped = MDNDataSpider.scrape(HTMLIndexPage, SVGIndexPage)
 
+for item in scraped:
+    print(f'Writing {item.file_name}...')
 
-items = []
-
-
-def scraped(item, response, spider):
-    if item.url is not ...:
-        items.append(item)
-
-
-process = scrapy.crawler.CrawlerProcess()
-process.crawl(MDNDataSpider)
-
-crawler = next(iter(process.crawlers))
-crawler.signals.connect(scraped, signal=scrapy.signals.item_scraped)
-process.start()
-
-for x in items:
-    save_code('html', x)
-
-#save_code('svg', url % 'SVG', svg_index | svg_index_layout)
+    with open(item.file_name, 'w', encoding='utf-8') as file:
+        print(item, file=file)
