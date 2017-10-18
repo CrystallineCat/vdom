@@ -1,11 +1,6 @@
-from .emitting import *
+from .base import *
 
 import itertools
-
-from keyword import kwlist as keywords
-import builtins
-
-taken_names = set(keywords) | vars(builtins).keys()
 
 
 class ModuleEmitter(CodeEmitter):
@@ -15,7 +10,7 @@ class ModuleEmitter(CodeEmitter):
 
     emit = property(lambda self: (
         '# -*- coding: utf-8 -*-',
-        'from .core import create_component',
+        'from vdom.core import Component',
         f'# From {self.url}',
         *self.categories,
         f'__all__ = {self.component_names!r}',
@@ -49,8 +44,13 @@ class ComponentEmitter(CodeEmitter):
     content: ...
     tag_name = property(lambda self: self.tag[1:-1])
     base_name = property(lambda self: self.tag_name.replace('-', '_'))
-    name = property(lambda self: self.base_name + ('_' if self.base_name in taken_names else ''))
-    code = property(lambda self: f'{self.name} = create_component({self.tag_name!r}, {Text(self.content)!r},)')
+    name = property(lambda self: self.base_name + ('_' if self.base_name in self.taken_names else ''))
+
+    @property
+    def code(self):
+        content = '' if self.tag_name == self.name else f'tag_name = {self.tag_name!r}'
+
+        return f'class {self.name}(Component):\n    {Text(self.content)!r}\n\n    {content}'
 
     other_appearance = None
 

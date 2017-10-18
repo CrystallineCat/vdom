@@ -1,13 +1,13 @@
-from .layout_mdn import HTMLIndexPage, SVGIndexPage
-from .spider import MDNDataSpider
+from .base import Spider
+from .mdn import HTMLIndexPage, SVGIndexPage
 
 import sys
 
 
 if 'cached' in sys.argv:
-    MDNDataSpider.use_cache(True)
+    Spider.use_cache(True)
 
-scraped = MDNDataSpider.scrape(HTMLIndexPage, SVGIndexPage)
+scraped = Spider.scrape(HTMLIndexPage, SVGIndexPage)
 
 for item in scraped:
     print(f'Writing {item.file_name}...')

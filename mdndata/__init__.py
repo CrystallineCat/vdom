@@ -1,2 +1,2 @@
-from .layout_mdn import HTMLIndexPage, SVGIndexPage
-from .spider import MDNDataSpider
+from .base import Spider
+from .mdn import HTMLIndexPage, SVGIndexPage

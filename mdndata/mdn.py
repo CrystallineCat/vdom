@@ -1,13 +1,13 @@
-from .emitting_vdom import *
-from .layout import XPath
+from .base import *
+from .vdom import *
 
 
 class ElementPage(Emitter):
     url = ...
 
     class Docs(Emitter, Layout):
-        overview: HTML = XPath(XPath.until('table', 'h2'))
-        notes: HTML = XPath('id("Notes")')
+        overview: ReST = XPath(XPath.until('table', 'h2'))
+        notes: ReST = XPath('id("Notes")')
 
     docs: Docs = XPath('id("wikiArticle")/*[1]')
 
@@ -25,7 +25,7 @@ class HTMLIndexPage(ModuleEmitter, Layout):
         replacements = {lambda self: self.name.startswith('h1'), ('h1', 'h2', 'h3', 'h4', 'h5', 'h6')}
 
         name: Text = XPath('.')
-        docs: HTML = XPath('set:intersection(following-sibling::*, %s)' % XPath.until('table[1]'))
+        docs: ReST = XPath('set:intersection(following-sibling::*, %s)' % XPath.until('table[1]'))
         components: [ComponentLayout] = XPath('following-sibling::table[1]/tbody/tr/td[1]/a')
 
     categories: [HTMLCategoryLayout] = XPath('id("wikiArticle")/h2')
@@ -37,7 +37,7 @@ class SVGIndexPage(ModuleEmitter, Layout):
 
     class SVGCategoryLayout(CategoryEmitter, Layout):
         name: Text = XPath('.')
-        docs: HTML = HTML()
+        docs: ReST = ReST()
         components: [ComponentLayout] = XPath('following-sibling::p[1]/a')
 
     categories: [SVGCategoryLayout] = XPath('id("SVG_elements_by_category")/following-sibling::h3')

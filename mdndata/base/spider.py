@@ -2,8 +2,8 @@ import scrapy
 import scrapy.crawler
 
 
-class MDNDataSpider(scrapy.Spider):
-    name = 'mdndata'
+class Spider(scrapy.Spider):
+    name = 'spider'  # FIXME: This spider is actually rather generic, not sure what to best call it...
     custom_settings = {
         'HTTPCACHE_ENABLED': False,
         'HTTPCACHE_POLICY': 'scrapy.extensions.httpcache.DummyPolicy',

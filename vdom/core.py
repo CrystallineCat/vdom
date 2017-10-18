@@ -102,19 +102,7 @@ def _flatten_children(*children, **kwargs):
     return children
 
 
-class Component:
-    """A basic class for a virtual DOM Component"""
-
-    def __init__(self, *children, **kwargs):
-        self.children = _flatten_children(*children, **kwargs)
-        self.attributes = kwargs
-        self.tag_name = tag_name
-
-    def _repr_mimebundle_(self, include, exclude, **kwargs):
-        return {'application/vdom.v1+json': to_json(self), 'text/plain': '<{tag_name} />'.format(tag_name=tag_name)}
-
-
-class create_component(type):
+def create_component(tag_name, docs=None):
     """Create a component for an HTML Tag
 
     Examples:
@@ -123,27 +111,38 @@ class create_component(type):
         <marquee>woohoo</marquee>
     """
 
-    def __init__(self, tag_name, docs=None, name=None):
-        super().__init__(name or tag_name, (Component,), {})
+    docs = docs or """
+        A virtual DOM component for a {tag_name} tag
 
-    @staticmethod
-    def __new__(cls, tag_name, docs=None, name=None):
-        default_docs = """
-            A virtual DOM component for a {tag_name} tag
+        >>> {tag_name}()
+        <{tag_name} />
+    """.format(tag_name=tag_name)
 
-            >>> {tag_name}()
-            <{tag_name} />
-        """.format(tag_name=tag_name)
-
-        return super().__new__(
-            cls, name or tag_name, (Component,), {
-                '__doc__': docs or default_docs,
-                'tag_name': tag_name,
-            }
-        )
+    return type(tag_name, (Component,), {
+        '__doc__': docs or default_docs,
+        'tag_name': tag_name,
+    })
 
 
-def h(tagName, *children, **kwargs):
+class Component():
+    """A basic class for a virtual DOM Component"""
+
+    def __init__(self, *children, **kwargs):
+        self.children = _flatten_children(*children, **kwargs)
+        self.attributes = kwargs
+
+    @property
+    def tag_name(self):
+        return self.__name__
+
+    def _repr_mimebundle_(self, include, exclude, **kwargs):
+        return {
+            'application/vdom.v1+json': to_json(self),
+            'text/plain': '<{tag_name} />'.format(tag_name=self.tag_name),
+        }
+
+
+def h(tag_name, *children, **kwargs):
     """Takes an HTML Tag, children (string, array, or another element), and attributes
 
     Examples:
@@ -159,7 +158,7 @@ def h(tagName, *children, **kwargs):
     attrs = attrs.copy()
     attrs.update(kwargs)
 
-    el = create_component(tagName)
+    el = create_component(tag_name)
     return el(children, **attrs)
 
 

@@ -1,0 +1,2 @@
+.. automodule:: vdom.html
+    :members:
