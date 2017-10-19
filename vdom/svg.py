@@ -81,7 +81,6 @@ class set_(Component):
         boolean values. The ``<set>`` element is non-additive. The additive and
         accumulate attributes are not allowed, and will be ignored if specified.
     """
-
     tag_name = 'set'
 
 
@@ -92,6 +91,10 @@ class circle(Component):
     """
         The **``<circle>``** `SVG </en-US/docs/Web/SVG>`_ element is an SVG basic shape,
         used to create circles based on a center point and a radius.
+        
+        Examples::
+        
+            svg(circle(cx='100', cy='100', r='100'), viewBox='0 0 200 200')
     """
 
 
@@ -104,6 +107,13 @@ class ellipse(Component):
         example, you wanted to draw an ellipse tilted at a 45 degree angle), but can be
         rotated by using the ```transform </en-US/docs/Web/SVG/Attribute/transform>`_``
         attribute.
+        
+        Examples::
+        
+            svg(ellipse(cx='60', cy='60', rx='50', ry='25'),
+                width='120',
+                height='120',
+                viewBox='0 0 120 120')
     """
 
 
@@ -111,6 +121,14 @@ class line(Component):
     """
         The **``<line>``** element is an SVG basic shape used to create a line
         connecting two points.
+        
+        Examples::
+        
+            svg(line(
+                x1='20', y1='100', x2='100', y2='20', stroke_width='2', stroke='black'),
+                width='120',
+                height='120',
+                viewBox='0 0 120 120')
     """
 
 
@@ -120,6 +138,13 @@ class polygon(Component):
         connected straight line segments. The last point is connected to the first
         point. For open shapes see the```<polyline>`` </en-
         US/docs/Web/SVG/Element/polyline>`_ element.
+        
+        Examples::
+        
+            svg(polygon(points='60,20 100,40 100,80 60,100 20,80 20,40'),
+                width='120',
+                height='120',
+                viewBox='0 0 120 120')
     """
 
 
@@ -130,6 +155,12 @@ class polyline(Component):
         ``polyline`` is used to create open shapes as the last point doesn't have to be
         connected to the first point. For closed shapes see the ```<polygon>`` </en-
         US/docs/Web/SVG/Element/polygon>`_ element.
+        
+        Examples::
+        
+            svg(polyline(fill='none', stroke='black', points='20,100 40,60 70,80 100,20'),
+                width='120',
+                height='120')
     """
 
 
@@ -143,17 +174,7 @@ class rect(Component):
 
 # == Container elements ==
 
-
-class a(Component):
-    """
-        The **``<a>``** SVG element defines a hyperlink.
-        
-        Since this element shares its tag name with `HTML's ``<a>`` element </en-
-        US/docs/Web/HTML/Element/a>`_, selecting "``a``" with CSS or ```querySelector``
-        </en-US/docs/Web/API/Document/querySelector>`_ may apply to the wrong kind of
-        element. Try `the ``@namespace`` rule </en-US/docs/Web/CSS/@namespace>`_ to
-        distinguish between the two.
-    """
+# a: see above under 'Inline text semantics'
 
 
 class defs(Component):
@@ -175,6 +196,18 @@ class g(Component):
         performed on all of its child elements, and any of its attributes are inherited
         by its child elements. It can also group multiple elements to be referenced
         later with the ```<use>`` </en-US/docs/Web/SVG/Element/use>`_ element.
+        
+        Examples::
+        
+            svg(g(
+                circle(cx='25', cy='25', r='15'),
+                circle(cx='40', cy='25', r='15'),
+                circle(cx='55', cy='25', r='15'),
+                circle(cx='70', cy='25', r='15'),
+                stroke='green',
+                fill='white',
+                stroke_width='5'),
+                viewBox='0 0 95 50')
     """
 
 
@@ -211,7 +244,6 @@ class missing_glyph(Component):
         rendered, if for a given character the font doesn't define an appropriate
         ```<glyph>`` </en-US/docs/Web/SVG/Element/glyph>`_.
     """
-
     tag_name = 'missing-glyph'
 
 
@@ -448,6 +480,24 @@ class feConvolveMatrix(Component):
         
         <pre>(9*  0 + 8* 20 + 7* 40 + 6*100 + 5*120 + 4*140 + 3*200 + 2*220 + 1*240) /
         (9+8+7+6+5+4+3+2+1)</pre>
+        
+        Examples::
+        
+            svg(defs(
+                filter_(
+                    feConvolveMatrix(
+                        kernelMatrix=
+                        '3 0 0                         0 0 0                         0 0 -3'
+                    ),
+                    id_='emboss')),
+                image(
+                    href='/files/12668/MDN.svg',
+                    x='0',
+                    y='0',
+                    height='200',
+                    width='200',
+                    style='filter:url(#emboss);'),
+                viewBox='0 0 200 200')
     """
 
 
@@ -499,6 +549,15 @@ class feDropShadow(Component):
         of-feDropShadow" flood-opacity="flood-opacity-of-feDropShadow"/> <feComposite
         in2="offsetblur" operator="in"/> <feMerge> <feMergeNode/> <feMergeNode in="in-
         of-feDropShadow"/> </feMerge>
+        
+        Examples::
+        
+            svg(defs(
+                filter_(feDropShadow(dx='4', dy='8', stdDeviation='4'), id_='shadow')),
+                circle(
+                    cx='50%', cy='50%', r='80', style='fill:blue; filter:url(#shadow);'),
+                width='200',
+                height='200')
     """
 
 
@@ -508,6 +567,23 @@ class feFlood(Component):
         color and opacity defined by ```flood-color </en-
         US/docs/Web/SVG/Attribute/flood-color>`_`` and ```flood-opacity </en-
         US/docs/Web/SVG/Attribute/flood-opacity>`_``.
+        
+        Examples::
+        
+            svg(defs(
+                filter_(
+                    feFlood(
+                        x='50',
+                        y='50',
+                        width='100',
+                        height='100',
+                        flood_color='green',
+                        flood_opacity='0.5'),
+                    id_='floodFilter',
+                    filterUnits='userSpaceOnUse')),
+                use(style='filter: url(#floodFilter);'),
+                width='200',
+                height='200')
     """
 
 
@@ -552,6 +628,15 @@ class feGaussianBlur(Component):
         The **``<feGaussianBlur>``** `SVG </en-US/docs/Web/SVG>`_ filter primitive blurs
         the input image by the amount specified in ```stdDeviation </en-
         US/docs/Web/SVG/Attribute/stdDeviation>`_``, which defines the bell-curve.
+        
+        Examples::
+        
+            svg(filter_(
+                feGaussianBlur(in_='SourceGraphic', stdDeviation='5'), id_='blurMe'),
+                circle(cx='60', cy='60', r='50', fill='green'),
+                circle(cx='170', cy='60', r='50', fill='green', filter_='url(#blurMe)'),
+                width='230',
+                height='120')
     """
 
 
@@ -560,6 +645,18 @@ class feImage(Component):
         The **``<feImage>``** `SVG </en-US/docs/Web/SVG>`_ filter primitive fetches
         image data from an external source and provides the pixel data as output
         (meaning if the external source is an SVG image, it is rasterized.)
+        
+        Examples::
+        
+            svg(defs(
+                filter_(feImage(href='/files/6457/mdn_logo_only_color.png'), id_='image')),
+                rect(
+                    x='10%',
+                    y='10%',
+                    width='80%',
+                    height='80%',
+                    style='filter:url(#image);'),
+                viewBox='0 0 200 200')
     """
 
 
@@ -594,6 +691,31 @@ class feOffset(Component):
         The input image as a whole is offset by the values specified in the ```dx </en-
         US/docs/Web/SVG/Attribute/dx>`_`` and ```dy </en-
         US/docs/Web/SVG/Attribute/dy>`_`` attributes.
+        
+        Examples::
+        
+            svg(defs(
+                filter_(
+                    feOffset(in_='SourceGraphic', dx='60', dy='60'),
+                    id_='feOffset',
+                    x='-40',
+                    y='-20',
+                    width='100',
+                    height='200')),
+                rect(
+                    x='40',
+                    y='40',
+                    width='100',
+                    height='100',
+                    style='stroke : #000000; fill: green; filter: url(#feOffset);'),
+                rect(
+                    x='40',
+                    y='40',
+                    width='100',
+                    height='100',
+                    style='stroke : #000000; fill: green; '),
+                width='200',
+                height='200')
     """
 
 
@@ -638,12 +760,7 @@ class feTurbulence(Component):
 
 # == Font elements ==
 
-
-class font(Component):
-    """
-        The **``<font>``** `SVG </en-US/docs/Web/SVG>`_ element defines a font to be
-        used for text layout.
-    """
+# font: see above under 'Obsolete and deprecated elements'
 
 
 class font_face(Component):
@@ -658,7 +775,6 @@ class font_face(Component):
         CSS ```@font-face`` </en-US/docs/Web/CSS/@font-face>`_ rule. It defines a font's
         outer properties.
     """
-
     tag_name = 'font-face'
 
 
@@ -674,7 +790,6 @@ class font_face_format(Component):
         the type of font referenced by its parent ```<font-face-uri>`` </en-
         US/docs/Web/SVG/Element/font-face-uri>`_.
     """
-
     tag_name = 'font-face-format'
 
 
@@ -689,7 +804,6 @@ class font_face_name(Component):
         The **``<font-face-name>``** element points to a locally installed copy of this
         font, identified by its name.
     """
-
     tag_name = 'font-face-name'
 
 
@@ -708,7 +822,6 @@ class font_face_src(Component):
         to locally installed copies of this font, and ```<font-face-uri>`` </en-
         US/docs/Web/SVG/Element/font-face-uri>`_, utilizing remotely defined fonts.
     """
-
     tag_name = 'font-face-src'
 
 
@@ -723,7 +836,6 @@ class font_face_uri(Component):
         The **``<font-face-uri>``** `SVG </en-US/docs/Web/SVG>`_ element points to a
         remote definition of the current font.
     """
-
     tag_name = 'font-face-uri'
 
 
@@ -762,6 +874,17 @@ class linearGradient(Component):
     """
         The **``<linearGradient>``** `SVG </en-US/docs/Web/SVG>`_ element lets authors
         define linear gradients to fill or stroke graphical elements.
+        
+        Examples::
+        
+            svg(defs(
+                linearGradient(
+                    stop(offset='5%', stop_color='green'),
+                    stop(offset='95%', stop_color='gold'),
+                    id_='MyGradient')),
+                rect(fill='url(#MyGradient)', x='10', y='10', width='100', height='100'),
+                width='120',
+                height='120')
     """
 
 
@@ -773,6 +896,18 @@ class radialGradient(Component):
     """
         The **``<radialGradient>``** `SVG </en-US/docs/Web/SVG>`_ element lets authors
         define radial gradients to fill or stroke graphical elements.
+        
+        Examples::
+        
+            svg(defs(
+                radialGradient(
+                    stop(offset='10%', stop_color='gold'),
+                    stop(offset='95%', stop_color='green'),
+                    id_='exampleGradient')),
+                circle(fill='url(#exampleGradient)', cx='60', cy='60', r='50'),
+                width='120',
+                height='120',
+                viewBox='0 0 120 120')
     """
 
 
@@ -782,6 +917,30 @@ class stop(Component):
         colors to use on a gradient, which is a child element to either the
         ```<linearGradient>`` </en-US/docs/Web/SVG/Element/linearGradient>`_ or the
         ```<radialGradient>`` </en-US/docs/Web/SVG/Element/radialGradient>`_ element.
+        
+        Examples::
+        
+            svg(defs(
+                linearGradient(
+                    stop(offset='5%', stop_color='#F60'),
+                    stop(offset='95%', stop_color='#FF6'),
+                    id_='MyGradient')),
+                '# Outline the drawing area in black',
+                rect(
+                    fill='none', stroke='black', x='0.5', y='0.5', width='79',
+                    height='39'),
+                '# The rectangle is filled using a linear gradient',
+                rect(
+                    fill='url(#MyGradient)',
+                    stroke='black',
+                    stroke_width='1',
+                    x='10',
+                    y='10',
+                    width='60',
+                    height='20'),
+                width='100%',
+                height='100%',
+                viewBox='0 0 80 40')
     """
 
 
@@ -791,32 +950,7 @@ class stop(Component):
 
 # ellipse: see above under 'Basic shapes'
 
-
-class image(Component):
-    """
-        The **``<image>``** SVG element includes images inside SVG documents. It can
-        display `raster image </en-US/docs/Glossary/raster_image>`_ files or other SVG
-        files.
-        
-        The only image formats SVG software must support are `JPEG </en-
-        US/docs/Glossary/jpeg>`_, `PNG </en-US/docs/Glossary/PNG>`_, and other SVG
-        files. Animated `GIF </en-US/docs/Glossary/gif>`_ behavior is undefined.
-        
-        SVG files displayed with ``<image>`` are `treated as an image </en-
-        US/docs/Web/SVG/SVG_as_an_Image>`_: external resources aren't loaded, `:visited
-        </en-US/docs/Web/CSS/:visited>`_ styles `aren't applied </en-
-        US/docs/Web/CSS/Privacy_and_the_:visited_selector>`_, and they cannot be
-        interactive. To include dynamic SVG elements, try `<use> </en-
-        US/docs/Web/SVG/Element/use>`_ with an external URL. To include SVG files and
-        run scripts inside them, try `<object> </en-US/docs/Web/HTML/Element/object>`_
-        inside of `<foreignObject> </en-US/docs/Web/SVG/Element/foreignObject>`_.
-        
-        **Note:** The HTML spec defines ``<image>`` as a synonym for `<img> </en-
-        US/docs/Web/HTML/Element/img>`_ while parsing HTML. This specific element and
-        its behavior only apply inside SVG documents or `inline SVG </en-
-        US/docs/SVG_In_HTML_Introduction>`_.
-    """
-
+# image: see above under 'Obsolete and deprecated elements'
 
 # line: see above under 'Basic shapes'
 
@@ -832,6 +966,17 @@ class path(Component):
         
         The **``<path>``** `SVG </en-US/docs/Web/SVG>`_ element is the generic element
         to define a shape. All the basic shapes can be created with a path element.
+        
+        Examples::
+        
+            svg(path(
+                d='M 100 100 L 300 100 L 200 300 z',
+                fill='orange',
+                stroke='black',
+                stroke_width='3'),
+                width='100%',
+                height='100%',
+                viewBox='0 0 400 400')
     """
 
 
@@ -852,6 +997,14 @@ class text(Component):
         rendered. This is different from being hidden by default, as setting `the
         display property </en-US/docs/Web/SVG/Attribute/display>`_ will not show the
         text.
+        
+        Examples::
+        
+            svg(text(
+                'Hello, out there', x='0', y='35', font_family='Verdana', font_size='35'),
+                width='500',
+                height='40',
+                viewBox='0 0 500 40')
     """
 
 
@@ -874,15 +1027,15 @@ class use(Component):
         Since SVG 2, the ```xlink:href </en-US/docs/Web/SVG/Attribute/xlink:href>`_``
         attribute is deprecated. See ```xlink:href`_`` page for more information.
         
-        Notes =====
+        Notes:
+        
+            * For years, Firefox has suffered from a bug whereby it doesn't completely follow the ``<svg:use>`` cascading rules (see `bug 265894 <https://bugzilla.mozilla.org/show_bug.cgi?id=265894>`_). A fix is `documented by Amelia Bellamy-Royds on StackOverflow <https://stackoverflow.com/questions/27866893/svg-fill-not-being-applied-in-firefox/27872310#27872310>`_. The good news is that this is finally fixed as of Firefox 56.
     """
 
 
 # == Graphics referencing elements ==
 
-
-class audio(Component):
-    ''
+# audio: see above under 'Image and multimedia'
 
 
 class iframe(Component):
@@ -896,33 +1049,30 @@ class iframe(Component):
         called the parent browsing context. The top-level browsing context (which has no
         parent) is typically the browser window.
         
-        ----- Notes -----
+        Notes:
+        
+            Starting in Gecko 6.0, rendering of inline frames correctly respects the borders of their containing element when they're rounded using ```border-radius`` </en-US/docs/Web/CSS/border-radius>`_.
     """
 
 
-# image: see above under 'Graphics elements'
+# image: see above under 'Obsolete and deprecated elements'
 
 # mesh: see above under 'Graphics elements'
 
 # use: see above under 'Graphics elements'
 
-
-class video(Component):
-    ''
+# video: see above under 'Image and multimedia'
 
 
 # == HTML elements ==
 
-# audio: see above under 'Graphics referencing elements'
+# audio: see above under 'Image and multimedia'
 
-
-class canvas(Component):
-    ''
-
+# canvas: see above under 'Scripting'
 
 # iframe: see above under 'Graphics referencing elements'
 
-# video: see above under 'Graphics referencing elements'
+# video: see above under 'Image and multimedia'
 
 
 # == Light source elements ==
@@ -945,6 +1095,35 @@ class feSpotLight(Component):
     """
         The **``<feSpotLight>``** `SVG </en-US/docs/Web/SVG>`_ filter primitive allows
         to create a spotlight effect.
+        
+        Examples::
+        
+            svg(defs(
+                filter_(
+                    feSpecularLighting(
+                        feSpotLight(x='600', y='600', z='400', limitingConeAngle='5.5'),
+                        result='spotlight',
+                        specularConstant='1.5',
+                        specularExponent='4',
+                        lighting_color='#FFF'),
+                    feComposite(
+                        in_='SourceGraphic',
+                        in2='spotlight',
+                        operator='out',
+                        k1='0',
+                        k2='1',
+                        k3='1',
+                        k4='0'),
+                    id_='spotlight')),
+                image(
+                    href='/files/6457/mdn_logo_only_color.png',
+                    x='10%',
+                    y='10%',
+                    width='80%',
+                    height='80%',
+                    style='filter:url(#spotlight);'),
+                width='200',
+                height='200')
     """
 
 
@@ -972,6 +1151,21 @@ class clipPath(Component):
         regions of a shape. For example, a circle with a radius of 10 which is clipped
         to a circle with a radius of 5 will not receive "click" events outside the
         smaller radius.
+        
+        Examples::
+        
+            svg(defs(
+                clipPath(
+                    circle(cx='30', cy='30', r='20'),
+                    circle(cx='70', cy='70', r='20'),
+                    id_='myClip')),
+                rect(x='10', y='10', width='100', height='100', clip_path='url(#myClip)'),
+                width='120',
+                height='120')
+        
+        ::
+        
+            style('svg { border: 3px dashed #999; } svg > rect:hover { fill: green; }')
     """
 
 
@@ -1013,26 +1207,9 @@ class hatch(Component):
 
 # radialGradient: see above under 'Gradient elements'
 
+# script: see above under 'Scripting'
 
-class script(Component):
-    """
-        A SVG ``script`` element is equivalent to the ```script`` </en-
-        US/HTML/Element/Script>`_ element in HTML and thus is the place for scripts
-        (e.g., ECMAScript).
-        
-        Any functions defined within any ``script`` element have a global scope across
-        the entire current document.
-    """
-
-
-class style(Component):
-    """
-        The **``<style>``** `SVG </en-US/docs/Web/SVG>`_ element allows style sheets to
-        be embedded directly within SVG content. SVG's ``style`` element has the same
-        attributes as the corresponding element in HTML (see HTML's ```<style>`` </en-
-        US/docs/Web/HTML/Element/style>`_ element).
-    """
-
+# style: see above under 'Document metadata'
 
 # symbol: see above under 'Container elements'
 
@@ -1069,16 +1246,44 @@ class solidcolor(Component):
         US/docs/Web/SVG/Element/linearGradient>`_ with only one color stop. This is less
         elegant, and unlike ``<solidcolor>``, cannot itself be used in the definition of
         gradients.
+        
+        Examples::
+        
+            svg(defs(
+                '# solidColor is experimental.',
+                solidcolor(id_='myColor', solid_color='gold', solid_opacity='0.8'),
+                '# linearGradient with a single color stop is a less elegant way to # achieve the same effect, but it works in current browsers.',
+                linearGradient(stop(offset='0', stop_color='green'), id_='myGradient')),
+                text('Circles colored with solidColor', x='10', y='20'),
+                circle(
+                    cx='150',
+                    cy='65',
+                    r='35',
+                    stroke_width='2',
+                    stroke='url(#myColor)',
+                    fill='white'),
+                circle(cx='50', cy='65', r='35', fill='url(#myColor)'),
+                text('Circles colored with linearGradient', x='10', y='120'),
+                circle(
+                    cx='150',
+                    cy='165',
+                    r='35',
+                    stroke_width='2',
+                    stroke='url(#myGradient)',
+                    fill='white'),
+                circle(cx='50', cy='165', r='35', fill='url(#myGradient)'),
+                viewBox='0 0 300 200',
+                height='150')
     """
 
 
 # == Renderable elements ==
 
-# a: see above under 'Container elements'
+# a: see above under 'Inline text semantics'
 
-# audio: see above under 'Graphics referencing elements'
+# audio: see above under 'Image and multimedia'
 
-# canvas: see above under 'HTML elements'
+# canvas: see above under 'Scripting'
 
 # circle: see above under 'Basic shapes'
 
@@ -1113,7 +1318,7 @@ class foreignObject(Component):
 
 # iframe: see above under 'Graphics referencing elements'
 
-# image: see above under 'Graphics elements'
+# image: see above under 'Obsolete and deprecated elements'
 
 # line: see above under 'Basic shapes'
 
@@ -1144,6 +1349,29 @@ class textPath(Component):
         ```<path>```_, include the given text within a **``<textPath>``** element which
         includes an ```href </en-US/docs/Web/SVG/Attribute/href>`_`` attribute with a
         reference to a ```<path>```_ element.
+        
+        Examples::
+        
+            svg(defs(
+                path(
+                    id_='MyPath',
+                    d='M 100 200               C 200 100 300   0 400 100              C 500 200 600 300 700 200              C 800 100 900 100 900 100'
+                )),
+                use(href='#MyPath', fill='none', stroke='red'),
+                text(
+                    textPath('We go up, then we go down, then up again', href='#MyPath'),
+                    font_family='Verdana',
+                    font_size='42.5'),
+                "# Show outline of the viewport using 'rect' element",
+                rect(
+                    x='1',
+                    y='1',
+                    width='998',
+                    height='298',
+                    fill='none',
+                    stroke='black',
+                    stroke_width='2'),
+                viewBox='0 0 1000 300')
     """
 
 
@@ -1159,7 +1387,7 @@ class tspan(Component):
 
 # use: see above under 'Graphics elements'
 
-# video: see above under 'Graphics referencing elements'
+# video: see above under 'Image and multimedia'
 
 
 # == Shape elements ==
@@ -1305,7 +1533,6 @@ class color_profile(Component):
         The **``<color-profile>``** element allows describing the color profile used for
         the image.
     """
-
     tag_name = 'color-profile'
 
 
@@ -1346,8 +1573,16 @@ class filter_(Component):
         referenced by using the ```filter </en-US/docs/Web/SVG/Attribute/filter>`_``
         attribute on the target SVG element or via the ```filter`` </en-
         US/docs/Web/CSS/filter>`_ `CSS </en-US/docs/Glossary/CSS>`_ property.
+        
+        Examples::
+        
+            svg(filter_(
+                feGaussianBlur(in_='SourceGraphic', stdDeviation='5'), id_='blurMe'),
+                circle(cx='60', cy='60', r='50', fill='green'),
+                circle(cx='170', cy='60', r='50', fill='green', filter_='url(#blurMe)'),
+                width='230',
+                height='120')
     """
-
     tag_name = 'filter'
 
 
@@ -1375,13 +1610,35 @@ class meshrow(Component):
     ''
 
 
-# script: see above under 'Never-rendered elements'
+# script: see above under 'Scripting'
 
-# style: see above under 'Never-rendered elements'
+# style: see above under 'Document metadata'
 
 
 class view(Component):
-    'A view is a defined way to view the image, like a zoom level or a detail view.'
+    """
+        A view is a defined way to view the image, like a zoom level or a detail view.
+        
+        Examples::
+        
+            svg(defs(
+                radialGradient(
+                    stop(offset='0%', stop_color='#8cffa0'),
+                    stop(offset='100%', stop_color='#8ca0ff'),
+                    id_='gradient')),
+                circle(r='50', cx='180', cy='50', style='fill:url(#gradient)'),
+                view(id_='halfSizeView', viewBox='0 0 1200 400'),
+                view(id_='normalSizeView', viewBox='0 0 600 200'),
+                view(id_='doubleSizeView', viewBox='0 0 300 100'),
+                a(text('half size', x='5', y='20', font_size='20'), href='#halfSizeView'),
+                a(text('normal size', x='5', y='40', font_size='20'),
+                  href='#normalSizeView'),
+                a(text('double size', x='5', y='60', font_size='20'),
+                  href='#doubleSizeView'),
+                width='600',
+                height='200',
+                viewBox='0 0 600 200')
+    """
 
 
 __all__ = [

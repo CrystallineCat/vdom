@@ -1,6 +1,6 @@
 from .base import *
 
-import itertools
+import collections
 
 
 class ModuleEmitter(CodeEmitter):
@@ -16,16 +16,6 @@ class ModuleEmitter(CodeEmitter):
         f'__all__ = {self.component_names!r}',
     ))
 
-    def preprocess(self):
-        first_appearance = {}
-
-        for category in self.categories:
-            for component in category.components:
-                if component.tag_name in first_appearance:
-                    component.disable(first_appearance[component.tag_name])
-                else:
-                    first_appearance[component.tag_name] = category.name
-
 
 class CategoryEmitter(CodeEmitter):
     name: ...
@@ -38,6 +28,11 @@ class CategoryEmitter(CodeEmitter):
         *self.components,
     ))
 
+    def preprocess(self):
+        for component in self.components:
+            component.category = self
+            component.categories_by_tag_name[component.tag_name].append(self)
+
 
 class ComponentEmitter(CodeEmitter):
     tag: ...
@@ -46,36 +41,27 @@ class ComponentEmitter(CodeEmitter):
     base_name = property(lambda self: self.tag_name.replace('-', '_'))
     name = property(lambda self: self.base_name + ('_' if self.base_name in self.taken_names else ''))
 
-    @property
-    def code(self):
-        content = '' if self.tag_name == self.name else f'tag_name = {self.tag_name!r}'
+    categories_by_tag_name = collections.defaultdict(list)
+    first_appearance = property(lambda self: self.categories_by_tag_name[self.tag_name][0])
 
-        return f'class {self.name}(Component):\n    {Text(self.content)!r}\n\n    {content}'
-
-    other_appearance = None
-
-    def disable(self, other_appearance):
-        self.other_appearance = other_appearance
+    category = None
 
     @property
     def emit(self):
-        if self.other_appearance:
-            yield f'# {self.tag_name}: see above under {self.other_appearance!r}'
-        else:
-            yield self.code
-
-    @property
-    def parse_results(self):
-        if '\N{EN DASH}' not in self.tag_name:
-            yield self
+        if self.category.name != self.first_appearance.name:
+            yield f'# {self.tag_name}: see above under {self.first_appearance.name!r}'
             return
 
-        # h1-h6 (with en dash) needs to become (h1, h2, h3, h4, h5, h6)
-        n0, n1 = self.tag_name.split('\N{EN DASH}')
-        len_prefix = list(itertools.takewhile(lambda i: n0[i] == n1[i], range(min(len(n0), len(n1)))))[-1] + 1
-        prefix = n0[:len_prefix]
-        n0 = int(n0[len_prefix:])
-        n1 = int(n1[len_prefix:])
+        yield '\n'.join((
+            f'class {self.name}(Component):',
+            f'    {Text(self.content)!r}',
+            f'    tag_name = {self.tag_name!r}' if self.tag_name != self.name else '',
+        )).strip()
 
-        for n in range(n0, n1 + 1):
-            yield type(self)(tag=f'<{prefix}{n}>', content=self.content)
+    def substitute_parse_results(self):
+        if '\N{EN DASH}' in self.tag_name:
+            # h1-h6 (with en dash) needs to become (h1, h2, h3, h4, h5, h6)
+            for tag_name in Text(self.tag_name).split_into_range('\N{EN DASH}'):
+                yield type(self)(tag=f'<{tag_name}>', content=self.content)
+        else:
+            yield self

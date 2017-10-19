@@ -45,16 +45,13 @@ class Layout(dict):
                 if not getattr(cls, key).plural:
                     obj[key] = values[0] if values else None
 
-            if hasattr(obj, 'parse_results'):
-                yield from obj.parse_results
+            if hasattr(obj, 'substitute_parse_results'):
+                yield from obj.substitute_parse_results()
             else:
                 yield obj
 
 
-class XPath:
-
-    def __init__(self, value):
-        self.value = value
+class AnnotatedDescriptor:
 
     def __set_name__(self, owner, name):
         self.owner = owner
@@ -70,23 +67,44 @@ class XPath:
         cls = self.owner.__annotations__[self.name]
         return isinstance(cls, list)
 
-    def parse(self, context, request=None):
-        result = context.xpath(self.value)
-        yield from self.cls.parse(result, request)
-
-    def __repr__(self):
-        if self.cls is None:
-            return f'{type(self).__qualname__}({self.value!r})'
-        else:
-            return f'{type(self).__qualname__}({self.value!r}, {self.cls.__qualname__})'
-
     def __get__(self, obj, owner=None):
         return obj.get(self.name, None) if obj is not None else self
 
-    @classmethod
-    def until(cls, head, *tail):
-        return 'set:difference(%s, following-sibling::%s|following-sibling::%s/following-sibling::*)' % (
-            cls.until(*tail) if tail else '.|following-sibling::*',
-            head,
-            head,
-        )
+
+class XPath(AnnotatedDescriptor):
+
+    def __init__(self, *paths):
+        self.paths = paths
+
+    def parse(self, context, request=None):
+        result = context
+
+        for path in self.paths:
+            result = result.xpath(path)
+
+        yield from self.cls.parse(result, request)
+
+    def __str__(self):
+        return ', '.join(map(str, self.paths))
+
+    def __repr__(self):
+        paths = ', '.join(map(repr, self.paths))
+        return f'{type(self).__qualname__}({paths})'
+
+    def __rshift__(self, other):
+        return type(self)(*(self.paths + (str(other),)))
+
+    def __and__(self, other):
+        return type(self)(f'set:intersection({self}, {other})')
+
+    def __sub__(self, other):
+        return type(self)(f'set:difference({self}, {other})')
+
+    def until(self, *stoppers):
+        mask = type(self)('.|following-sibling::*')
+
+        for stopper in stoppers:
+            exclusion = f'following-sibling::{stopper}[1]'
+            mask -= f'{exclusion}|{exclusion}/following-sibling::*'
+
+        return self >> mask

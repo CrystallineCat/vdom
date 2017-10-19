@@ -11,7 +11,7 @@ def toJSON(el, schema=None):
     If you wish to validate the JSON, pass in a schema via the schema keyword argument.
     If a schema is provided, this raises a ValidationError if JSON does not match the schema.
     """
-    warn("toJSON is deprecated in favor of to_json")
+    warn("toJSON is deprecated in favor of to_json", DeprecationWarning)
     return to_json(el, schema)
 
 
@@ -36,7 +36,7 @@ def createElement(tagName):
 
     This should have been written more like React.createClass
     """
-    warn("createElement is deprecated in favor of create_component")
+    warn("createElement is deprecated in favor of create_component", DeprecationWarning)
     return create_component(tagName)
 
 
@@ -51,5 +51,5 @@ def createComponent(tagName):
         <marquee>woohoo</marquee>
 
     """
-    warn("createComponent is deprecated in favor of create_component")
+    warn("createComponent is deprecated in favor of create_component", DeprecationWarning)
     return create_component(tagName)

@@ -65,7 +65,7 @@ class VDOM():
         return {'application/vdom.v1+json': to_json(self.obj)}
 
 
-def _flatten_children(*children, **kwargs):
+def _flatten_children(*children):
     '''Flattens *args to allow children to be passed as an array or as
     positional arguments.
 
@@ -82,10 +82,7 @@ def _flatten_children(*children, **kwargs):
     []
 
     '''
-    # children as keyword argument takes precedence
-    if ('children' in kwargs):
-        children = kwargs['children']
-    elif children is not None:
+    if children is not None:
         if len(children) == 0:
             children = None
         elif len(children) == 1:
@@ -102,7 +99,7 @@ def _flatten_children(*children, **kwargs):
     return children
 
 
-def create_component(tag_name, docs=None):
+def create_component(tag_name, doc=None):
     """Create a component for an HTML Tag
 
     Examples:
@@ -111,7 +108,7 @@ def create_component(tag_name, docs=None):
         <marquee>woohoo</marquee>
     """
 
-    docs = docs or """
+    doc = doc or """
         A virtual DOM component for a {tag_name} tag
 
         >>> {tag_name}()
@@ -119,7 +116,7 @@ def create_component(tag_name, docs=None):
     """.format(tag_name=tag_name)
 
     return type(tag_name, (Component,), {
-        '__doc__': docs or default_docs,
+        '__doc__': doc,
         'tag_name': tag_name,
     })
 
@@ -127,9 +124,9 @@ def create_component(tag_name, docs=None):
 class Component():
     """A basic class for a virtual DOM Component"""
 
-    def __init__(self, *children, **kwargs):
-        self.children = _flatten_children(*children, **kwargs)
-        self.attributes = kwargs
+    def __init__(self, *children, **attributes):
+        self.children = _flatten_children(*children)
+        self.attributes = attributes
 
     @property
     def tag_name(self):
