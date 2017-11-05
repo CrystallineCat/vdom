@@ -1,26 +1,36 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 vdom.core
 ~~~~~~~~~
 
-This module provides the core implementation for the VDOM (Virtual DOM).
+This module provides functions for creating elements and creating objects
+that are renderable in jupyter frontends.
 
 """
 
 from jsonschema import validate, Draft4Validator, ValidationError
+import json
+
+import os
+import io
+
+_vdom_schema_file_path = os.path.join(
+    os.path.dirname(__file__), "schemas", "vdom_schema_v0.json")
+with io.open(_vdom_schema_file_path, "r") as f:
+    VDOM_SCHEMA = json.load(f)
+_validate_err_template = "Your object didn't match the schema: {}. \n {}"
 
 
 def to_json(el, schema=None):
-    """Convert an element to JSON
+    """Convert an element to VDOM JSON
 
-    If you wish to validate the JSON, pass in a schema via the schema keyword argument.
-    If a schema is provided, this raises a ValidationError if JSON does not match the schema.
+    If you wish to validate the JSON, pass in a schema via the schema keyword
+    argument. If a schema is provided, this raises a ValidationError if JSON
+    does not match the schema.
     """
     if (type(el) is str):
-        return el
-    if (type(el) is list):
-        return list(map(to_json, el))
+        json_el = el
+    elif (type(el) is list):
+        json_el = list(map(to_json, el))
     elif (type(el) is dict):
         assert 'tagName' in el
         json_el = el.copy()
@@ -29,7 +39,11 @@ def to_json(el, schema=None):
         if 'children' not in el:
             json_el['children'] = []
     elif (hasattr(el, 'tagName') and hasattr(el, 'attributes')):
-        json_el = {'tagName': el.tagName, 'attributes': el.attributes, 'children': to_json(el.children)}
+        json_el = {
+            'tagName': el.tagName,
+            'attributes': el.attributes,
+            'children': to_json(el.children)
+        }
     else:
         json_el = el
 
@@ -37,12 +51,12 @@ def to_json(el, schema=None):
         try:
             validate(instance=json_el, schema=schema, cls=Draft4Validator)
         except ValidationError as e:
-            raise ValidationError("Your object didn't match the schema: {}. \n {}".format(schema, e))
+            raise ValidationError(_validate_err_template.format(schema, e))
 
     return json_el
 
 
-class VDOM():
+class VDOM(object):
     """A basic virtual DOM class which allows you to write literal VDOM spec
 
     >>> VDOM({ 'tagName': 'h1', 'children': 'Hey', 'attributes': {}})
@@ -57,12 +71,53 @@ class VDOM():
     >>> h1('Hey')
 
     """
+    _schema = VDOM_SCHEMA
+    _obj = None
 
-    def __init__(self, obj):
+    def __init__(self, obj, schema=None):
+        # we need to assign self.schema first,
+        # because it is used to validate the object
+        if schema is not None:
+            self.schema = schema
         self.obj = obj
 
     def _repr_mimebundle_(self, include, exclude, **kwargs):
-        return {'application/vdom.v1+json': to_json(self.obj)}
+        return {'application/vdom.v1+json': self.json_contents}
+
+    @property
+    def json_contents(self):
+        return to_json(self._obj, schema=self._schema)
+
+    @property
+    def obj(self):
+        return self._obj
+
+    @obj.setter
+    def obj(self, value):
+        if to_json(value, schema=self._schema) is not None:
+            self._obj = value
+
+    @property
+    def schema(self):
+        return self._schema
+
+    @schema.setter
+    def schema(self, value):
+        Draft4Validator.check_schema(value)
+        # if object is present, check if schema works, if not give a log
+        if self._obj:
+            try:
+                to_json(self._obj, schema=value)
+            except ValidationError as e:
+                # Don't raise error, but give warning that it is no longer valid
+                print(_validate_err_template.format(value, e))
+                print("VDOM cannot submit a message until this is fixed")
+        self._schema = value
+
+    @staticmethod
+    def validate(value, schema=_schema):
+        to_json(value, schema=schema)
+
 
 
 def _flatten_children(*children):
@@ -83,6 +138,7 @@ def _flatten_children(*children):
 
     '''
     if children is not None:
+        # If children array is empty, might as well pass None (null in JSON)
         if len(children) == 0:
             children = None
         elif len(children) == 1:
@@ -91,7 +147,11 @@ def _flatten_children(*children):
         elif isinstance(children[0], list):
             # Only one level of flattening, just to match the old API
             children = children[0]
+            # Do we care to map across all the children, making sure to
+            # flatten them too? Or should we just do the else case that
+            # keeps lists of lists of nodes?
         else:
+            # children came in as pure args, our primary case
             children = list(children)
     else:
         # Empty list of children
@@ -99,7 +159,7 @@ def _flatten_children(*children):
     return children
 
 
-def create_component(tag_name, doc=None):
+def create_component(tag_name, doc=None, *, allow_children=True):
     """Create a component for an HTML Tag
 
     Examples:
@@ -121,12 +181,18 @@ def create_component(tag_name, doc=None):
     })
 
 
-class Component():
+class Component(object):
     """A basic class for a virtual DOM Component"""
 
     def __init__(self, *children, **attributes):
         self.children = _flatten_children(*children)
+
+        if not allow_children and self.children:
+            raise ValueError('<{tagName} /> cannot have children'.format(
+                tagName=tagName))
+
         self.attributes = attributes
+        self._schema = VDOM_SCHEMA
 
     @property
     def tag_name(self):
@@ -137,6 +203,15 @@ class Component():
             'application/vdom.v1+json': to_json(self),
             'text/plain': '<{tag_name} />'.format(tag_name=self.tag_name),
         }
+
+    @property
+    def schema(self):
+        return self._schema
+
+    @schema.setter
+    def schema(self, value):
+        Draft4Validator.check_schema(value)
+        self._schema = value
 
 
 def h(tag_name, *children, **kwargs):
@@ -155,14 +230,11 @@ def h(tag_name, *children, **kwargs):
     attrs = attrs.copy()
     attrs.update(kwargs)
 
-    el = create_component(tag_name)
+    el = createComponent(tagName)
     return el(children, **attrs)
 
 
-# These are left for backwards compatibility, from here on out we should
-# define these in vdom.helpers, just like hyperscript-helpers
-h1 = create_component('h1')
-p = create_component('p')
-div = create_component('div')
-img = create_component('img')
-b = create_component('b')
+# backwards compatibility
+toJSON = to_json
+createElement = create_element
+createComponent = create_component
