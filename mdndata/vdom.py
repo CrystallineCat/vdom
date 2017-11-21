@@ -1,67 +1,70 @@
 from .base import *
 
-import collections
+
+def example_to_vdom(x):
+    if not isinstance(x.tag, str):
+        return Comment(x.text)
+
+    args = [x.text] + [e for c in x for e in (transform(c), c.tail) if e is not None]
+
+    if tuple(map(type, args)) == (str, str):
+        args = [''.join(args)]
+
+    def clean_whitespace(x):
+        x = re.sub('\s+', ' ', x)
+        return x.strip() if x[0] == x[-1] == ' ' else x
+
+    args = [clean_whitespace(arg) if isinstance(arg, str) else arg for arg in args]
+    args = [arg for arg in args if arg != '']
+
+    attrs = {Name(k): v for k, v in x.attrib.items()}
+
+    return Call(Name(x.tag), [arg for arg in args if arg is not None], attrs)
 
 
-class ModuleEmitter(CodeEmitter):
-    categories: [...]
-    components = property(lambda self: [component for category in self.categories for component in category.components])
-    component_names = property(lambda self: sorted({component.name for component in self.components}))
+def to_doc_string(content):
+    if content.overview:
+        yield Text(content.overview)
 
-    emit = property(lambda self: (
-        '# -*- coding: utf-8 -*-',
-        'from vdom.core import Component',
-        f'# From {self.url}',
-        *self.categories,
-        f'__all__ = {self.component_names!r}',
-    ))
+    if content.examples:
+        yield 'Examples::'
+        yield Text(content.examples[0]).map_lines('    %s')
 
-
-class CategoryEmitter(CodeEmitter):
-    name: ...
-    docs: ...
-    components: [...]
-
-    emit = property(lambda self: (
-        self.name.wrap(72).map_lines('# == %s =='),
-        self.docs.wrap(78).map_lines('# %s'),
-        *self.components,
-    ))
-
-    def preprocess(self):
-        for component in self.components:
-            component.category = self
-            component.categories_by_tag_name[component.tag_name].append(self)
+    if content.notes:
+        yield 'Notes:'
+        yield Text(content.notes).map_lines('    %s')
 
 
-class ComponentEmitter(CodeEmitter):
-    tag: ...
-    content: ...
-    tag_name = property(lambda self: self.tag[1:-1])
-    base_name = property(lambda self: self.tag_name.replace('-', '_'))
-    name = property(lambda self: self.base_name + ('_' if self.base_name in self.taken_names else ''))
+def to_python(index):
+    def parts():
+        yield Comment('-*- coding: utf-8 -*-')
+        yield Code('from vdom.core import Component')
+        yield Comment(f'From {index.url}')
+        yield Code()
 
-    categories_by_tag_name = collections.defaultdict(list)
-    first_appearance = property(lambda self: self.categories_by_tag_name[self.tag_name][0])
+        seen = {}
 
-    category = None
+        for category in index.categories:
+            yield Comment(f'== {category.name} ==')
 
-    @property
-    def emit(self):
-        if self.category.name != self.first_appearance.name:
-            yield f'# {self.tag_name}: see above under {self.first_appearance.name!r}'
-            return
+            if category.docs:
+                yield Comment(category.docs).wrap(78)
 
-        yield '\n'.join((
-            f'class {self.name}(Component):',
-            f'    {Text(self.content)!r}',
-            f'    tag_name = {self.tag_name!r}' if self.tag_name != self.name else '',
-        )).strip()
+            for component in category.components:
+                if component.tag_name in seen:
+                    yield Comment(f'{component.tag_name}: see above under "{seen[component.tag_name]}"')
+                    continue
 
-    def substitute_parse_results(self):
-        if '\N{EN DASH}' in self.tag_name:
-            # h1-h6 (with en dash) needs to become (h1, h2, h3, h4, h5, h6)
-            for tag_name in Text(self.tag_name).split_into_range('\N{EN DASH}'):
-                yield type(self)(tag=f'<{tag_name}>', content=self.content)
-        else:
-            yield self
+                seen[component.tag_name] = category.name
+
+                yield Code(
+                    f'class {component.name}(Component):',
+                    repr(Text('\n\n'.join(to_doc_string(component.content)))),
+                    f'    tag_name = {component.tag_name!r}' if component.tag_name != component.name else '',
+                )
+
+            yield Code()
+
+        yield Code(f'__all__ = {list(seen.keys())!r}')
+
+    return '\n'.join(filter(bool, map(str, parts())))

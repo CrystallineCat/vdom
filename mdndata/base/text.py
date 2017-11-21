@@ -1,6 +1,7 @@
 import creole
 import itertools
-import lxml.etree
+import lxml.html
+import lxml.html.builder
 import textwrap
 
 
@@ -26,7 +27,7 @@ class Text(str):
         return tuple(f'{prefix}{n}' for n in range(n0, n1 + 1))
 
     def __str__(self):
-        return self.wrap(80).strip()
+        return self
 
     def __repr__(self):
         if '\n' not in self:
@@ -35,19 +36,52 @@ class Text(str):
         return '"""\n        %s\n    """' % self.replace('\n', '\n        ')
 
 
-class ReST(Text):
+class Tree:
+    def __init__(self, tree=None):
+        self.tree = tree
+        self.process_tree()
+
+    def process_tree(self):
+        pass
 
     @classmethod
     def parse(cls, context, request=None):
-        yield cls('\n\n'.join(creole.html2rest(html) for html in context.extract()))
+        yield cls(lxml.html.builder.E.article(*[element.root for element in context.xpath('.')]))
+
+    def __repr__(self):
+        return repr(Text(self))
+
+    def __str__(self):
+        return lxml.html.tostring(self.tree, pretty_print=True).decode('utf8')
 
 
-class HTML(list):
+class ReST(Tree):
+    def process_tree(self):
+        for path in (
+            './/a',
+            './/em//strong',
+            './/em//code',
+            './/strong//em',
+            './/strong//code',
+            './/code//em',
+            './/code//strong',
+        ):
+            for element in self.tree.xpath(path):
+                element.drop_tag()
 
+    def __str__(self):
+        html = super().__str__()
+        rest = Text(creole.html2rest(html).replace('\\', '\n\n')).wrap(70)
+
+        return rest
+
+
+class HTML(Tree):
     @classmethod
     def parse(cls, context, request=None):
-        for html in context.xpath('.//text()').extract():
-            try:
-                yield cls(lxml.etree.fromstring(f'<article>{html}</article>'))
-            except lxml.etree.XMLSyntaxError:
-                pass
+        html = ''.join(context.xpath('.//text()').extract())
+
+        try:
+            yield cls(lxml.html.fromstring(f'<article>{html}</article>'))
+        except lxml.etree.XMLSyntaxError:
+            yield cls(lxml.html.builder.E.pre(html))

@@ -1,4 +1,4 @@
-from .emitting import Emitter, CodeEmitter
+from .emitting import *
 from .layout import Layout, XPath
 from .spider import Spider
-from .text import Text, ReST, HTML
+from .text import Text, Tree, ReST, HTML

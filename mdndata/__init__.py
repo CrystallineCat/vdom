@@ -1,2 +1,3 @@
 from .base import Spider
-from .mdn import HTMLIndexPage, SVGIndexPage
+from .html import HTMLIndexPage
+from .svg import SVGIndexPage

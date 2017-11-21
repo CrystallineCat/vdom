@@ -2,7 +2,6 @@ import scrapy
 
 
 class Layout(dict):
-
     @classmethod
     def parse(cls, context, request=None):
         obj = cls()
@@ -24,10 +23,15 @@ class Layout(dict):
             yield request.follow(context, callback=cls.parse, meta={'object': obj})
 
         else:
+            parsers = {}
+
+            for supercls in reversed(cls.mro()):
+                parsers.update(vars(supercls))
+
             obj.update(
                 {
                     key: list(value.parse(context, request))
-                    for key, value in vars(cls).items()
+                    for key, value in parsers.items()
                     if not key.startswith('_') and hasattr(value, 'parse') and
                     not isinstance(value, (type, str, type(...)))
                 }
@@ -52,27 +56,29 @@ class Layout(dict):
 
 
 class AnnotatedDescriptor:
-
     def __set_name__(self, owner, name):
         self.owner = owner
         self.name = name
 
     @property
+    def annotation(self):
+        for cls in self.owner.mro():
+            if self.name in cls.__annotations__:
+                return cls.__annotations__[self.name]
+
+    @property
     def cls(self):
-        cls = self.owner.__annotations__[self.name]
-        return cls if not isinstance(cls, list) else cls[0]
+        return self.annotation if not self.plural else self.annotation[0]
 
     @property
     def plural(self):
-        cls = self.owner.__annotations__[self.name]
-        return isinstance(cls, list)
+        return isinstance(self.annotation, list)
 
     def __get__(self, obj, owner=None):
         return obj.get(self.name, None) if obj is not None else self
 
 
 class XPath(AnnotatedDescriptor):
-
     def __init__(self, *paths):
         self.paths = paths
 

@@ -236,5 +236,5 @@ def h(tag_name, *children, **kwargs):
 
 # backwards compatibility
 toJSON = to_json
-createElement = create_element
+createElement = create_component
 createComponent = create_component
